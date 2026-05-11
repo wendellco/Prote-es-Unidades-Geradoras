@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2a5298">
+    <meta name="description" content="Sistema de Consulta de Proteções Impeditivas de Unidades Geradoras">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Proteções UG">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="icon-192.png">
+    <title>Proteções de Unidades Geradoras</title>
+    <style>
+        * { margin: 0px; padding: 0px; box-sizing: border-box; }
+        body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, rgb(30, 60, 114) 0%, rgb(42, 82, 152) 100%); color: rgb(51, 51, 51); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1200px; margin: 0px auto; background: white; border-radius: 12px; box-shadow: rgba(0, 0, 0, 0.2) 0px 10px 40px; overflow: hidden; }
+        .header { background: linear-gradient(135deg, rgb(30, 60, 114) 0%, rgb(42, 82, 152) 100%); color: white; padding: 30px; text-align: center; }
+        .header h1 { font-size: 2.5em; margin-bottom: 10px; font-weight: 700; }
+        .header p { font-size: 1.1em; opacity: 0.9; }
+        .tabs { display: flex; align-items: stretch; width: 100%; border-bottom: 2px solid rgb(221, 221, 221); background: rgb(248, 249, 250); }
+        .tab-button { flex: 1 1 0%; min-width: 0; min-height: 54px; display: flex; align-items: center; justify-content: center; text-align: center; line-height: 1.25; padding: 15px; border: none; border-bottom: 3px solid transparent; background: none; cursor: pointer; font-size: 1em; font-weight: 600; color: rgb(102, 102, 102); transition: 0.3s; margin-bottom: -2px; }
+        .tab-button:hover { background: rgb(233, 236, 239); color: rgb(30, 60, 114); }
+        .tab-button.active { color: rgb(42, 82, 152); border-bottom-color: rgb(42, 82, 152); }
+        .tab-content { display: none; padding: 30px; animation: 0.3s ease 0s 1 normal none running fadeIn; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { 
+          0% { opacity: 0; transform: translateY(10px); }
+          100% { opacity: 1; transform: translateY(0px); }
+        }
+        .search-section { margin-bottom: 30px; }
+        .search-section h2 { color: rgb(30, 60, 114); margin-bottom: 15px; font-size: 1.5em; }
+        .search-box { display: flex; align-items: stretch; gap: 10px; margin-bottom: 20px; }
+        .search-box input { flex: 1 1 0%; padding: 12px; border: 2px solid rgb(221, 221, 221); border-radius: 6px; font-size: 1em; transition: border-color 0.3s; }
+        .search-box input:focus { outline: none; border-color: rgb(42, 82, 152); box-shadow: rgba(42, 82, 152, 0.1) 0px 0px 0px 3px; }
+        .search-box button { display: inline-flex; align-items: center; justify-content: center; padding: 12px 30px; background: rgb(42, 82, 152); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: background 0.3s; }
+        .search-box button:hover { background: rgb(30, 60, 114); }
+        .system-section { margin-bottom: 40px; }
+        .system-title { background: rgb(42, 82, 152); color: white; padding: 15px 20px; border-radius: 6px; margin-bottom: 20px; font-size: 1.3em; font-weight: 600; }
+        .table-wrapper { overflow-x: auto; width: 100%; margin-bottom: 20px; }
+        table { width: 100%; table-layout: fixed; border-collapse: collapse; background: white; border-radius: 6px; overflow: hidden; box-shadow: rgba(0, 0, 0, 0.1) 0px 2px 8px; }
+        thead { background: rgb(248, 249, 250); border-bottom: 2px solid rgb(221, 221, 221); }
+        th { padding: 15px; text-align: left; vertical-align: middle; font-weight: 600; color: rgb(30, 60, 114); border-right: 1px solid rgb(221, 221, 221); }
+        th:last-child { border-right: none; }
+        td { padding: 12px 15px; vertical-align: middle; border-bottom: 1px solid rgb(238, 238, 238); border-right: 1px solid rgb(238, 238, 238); overflow-wrap: anywhere; word-break: normal; }
+        td:last-child { border-right: none; }
+        tr:hover { background: rgb(248, 249, 250); }
+        .codigo { font-weight: 600; color: rgb(42, 82, 152); overflow-wrap: anywhere; word-break: normal; }
+        .impeditiva { text-align: center; font-weight: 600; }
+        .impeditiva.sim { color: rgb(220, 53, 69); }
+        .impeditiva.nao { color: rgb(40, 167, 69); }
+        .liberacao { text-align: center; }
+        .btn-procedimento { display: inline-flex; align-items: center; justify-content: center; min-width: 150px; max-width: 100%; background: rgb(42, 82, 152); color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: 600; line-height: 1.2; text-align: center; transition: background 0.3s; white-space: nowrap; }
+        .btn-procedimento:hover { background: rgb(30, 60, 114); }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0px; top: 0px; width: 100%; height: 100%; padding: 20px; overflow-y: auto; background: rgba(0, 0, 0, 0.5); animation: 0.3s ease 0s 1 normal none running fadeIn; }
+        .modal.show { display: flex; align-items: center; justify-content: center; }
+        .modal-content { background: white; padding: 30px; border-radius: 12px; max-width: 700px; width: min(90%, 700px); max-height: 80vh; margin: auto; overflow-y: auto; box-shadow: rgba(0, 0, 0, 0.3) 0px 10px 40px; animation: 0.3s ease 0s 1 normal none running slideUp; }
+        @keyframes slideUp { 
+          0% { transform: translateY(30px); opacity: 0; }
+          100% { transform: translateY(0px); opacity: 1; }
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; margin-bottom: 20px; border-bottom: 2px solid rgb(221, 221, 221); padding-bottom: 15px; }
+        .modal-header h2 { flex: 1 1 auto; min-width: 0; color: rgb(30, 60, 114); margin: 0px; line-height: 1.3; overflow-wrap: anywhere; }
+        .close-btn { flex: 0 0 36px; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; background: none; border: none; font-size: 28px; line-height: 1; cursor: pointer; color: rgb(153, 153, 153); transition: color 0.3s; }
+        .close-btn:hover { color: rgb(51, 51, 51); }
+        .modal-body { color: rgb(51, 51, 51); line-height: 1.8; }
+        .info-row { margin-bottom: 20px; padding: 15px; background: rgb(248, 249, 250); border-radius: 6px; border-left: 4px solid rgb(42, 82, 152); }
+        .info-row label { font-weight: 600; color: rgb(30, 60, 114); display: block; margin-bottom: 5px; }
+        .info-row p { margin: 0px; white-space: pre-wrap; overflow-wrap: break-word; }
+        .observacoes { background: rgb(255, 243, 205); border-left: 4px solid rgb(255, 193, 7); padding: 15px; border-radius: 6px; margin-top: 15px; }
+        .observacoes label { font-weight: 600; color: rgb(133, 100, 4); display: block; margin-bottom: 10px; }
+        .observacoes p { margin: 5px 0px; color: rgb(133, 100, 4); white-space: pre-wrap; overflow-wrap: break-word; }
+        .no-results { text-align: center; padding: 40px; color: rgb(153, 153, 153); font-size: 1.1em; }
+        .resultado-busca { background: rgb(231, 243, 255); border-left: 4px solid rgb(42, 82, 152); padding: 15px; border-radius: 6px; margin-bottom: 20px; }
+        .resultado-busca h3 { color: rgb(30, 60, 114); margin-bottom: 10px; }
+        #systemsContainer table th:nth-child(1), #systemsContainer table td:nth-child(1) { width: 18%; }
+        #systemsContainer table th:nth-child(2), #systemsContainer table td:nth-child(2) { width: 38%; }
+        #systemsContainer table th:nth-child(3), #systemsContainer table td:nth-child(3) { width: 12%; text-align: center; }
+        #systemsContainer table th:nth-child(4), #systemsContainer table td:nth-child(4) { width: 12%; text-align: center; }
+        #systemsContainer table th:nth-child(5), #systemsContainer table td:nth-child(5) { width: 20%; text-align: center; }
+        #searchResults table th:nth-child(1), #searchResults table td:nth-child(1) { width: 15%; }
+        #searchResults table th:nth-child(2), #searchResults table td:nth-child(2) { width: 26%; }
+        #searchResults table th:nth-child(3), #searchResults table td:nth-child(3) { width: 22%; }
+        #searchResults table th:nth-child(4), #searchResults table td:nth-child(4) { width: 10%; text-align: center; }
+        #searchResults table th:nth-child(5), #searchResults table td:nth-child(5) { width: 10%; text-align: center; }
+        #searchResults table th:nth-child(6), #searchResults table td:nth-child(6) { width: 17%; text-align: center; }
+        @media (max-width: 768px) {
+          body { padding: 10px; }
+          .header h1 { font-size: 1.8em; }
+          .tabs { flex-wrap: wrap; }
+          .tab-button { flex: 0 0 50%; }
+          .search-box { flex-direction: column; }
+          table { min-width: 780px; font-size: 0.9em; }
+          th, td { padding: 10px; }
+          .modal { padding: 10px; align-items: flex-start; }
+          .modal.show { align-items: flex-start; }
+          .modal-content { max-width: 95%; width: 95%; padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚡ Proteções de Unidades Geradoras</h1>
+            <p>Sistema de Consulta de Proteções Impeditivas</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-button" onclick="openTab(event, 'busca')">🔍 Busca Rápida</button>
+            <button class="tab-button active" onclick="openTab(event, 'sistemas')">📋 Por Sistema</button>
+        </div>
+
+        <!-- TAB: BUSCA RÁPIDA -->
+        <div id="busca" class="tab-content">
+            <div class="search-section">
+                <h2>Pesquisar Proteção</h2>
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Digite código (ex: 87, 87B) ou nomenclatura..." oninput="performSearch()">
+                    <button onclick="performSearch()">Buscar</button>
+                </div>
+                <div id="searchResults">
+                    <!-- Resultados serão inseridos aqui -->
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: POR SISTEMA -->
+        <div id="sistemas" class="tab-content active">
+            <div id="systemsContainer">
+                <!-- Sistema do Gerador -->
+                <div class="system-section">
+                    <div class="system-title">Sistema do Gerador</div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Nome da Proteção</th>
+                                    <th>Impeditiva</th>
+                                    <th>Liberação</th>
+                                    <th>Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td class="codigo">48DX</td><td>Discordância de polo</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">50/62BF</td><td>Falha disjuntor</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">87B</td><td>Relé diferencial de barra</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">87L</td><td>Relé diferencial de linha</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">87G</td><td>Relé diferencial do gerador</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">87U</td><td>Relé diferencial da unidade</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">87N/87REF/87NT/87NI</td><td>Falta a terra restrita</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">87T</td><td>Relé diferencial do Trafo Elevador</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">63D1</td><td>SF6 pressão baixa no compartimento D</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">63M</td><td>SF6 pressão baixa (2º estágio) no compartimento R</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">63PD</td><td>2º estágio da pressão da bucha do transformador</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">59G</td><td>2º estágio de sobretensão</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">51L</td><td>Sobrecorrente de linha (Exclusivo para o link de Interligação UHE/SE Tucuruí)</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">51N</td><td>Sobrecorrente de Neutro (Exclusivo para o link de Interligação UHE/SE Tucuruí)</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">63</td><td>2º estágio Pressão de óleo no transformador (relé de gás)</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">63DP</td><td>2º estágio Pressão de óleo no transformador (relé de gás)</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">49T</td><td>2º estágio da temperatura do enrolamento do transformador</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">49AT</td><td>2º estágio da temperatura do enrolamento do transformador</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">26</td><td>2º estágio da temperatura do óleo do transformador</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">26T</td><td>2º estágio da temperatura do óleo do transformador</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">60TE</td><td>Sobretensão homopolar</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">41DX</td><td>Abertura indevida do disjuntor de campo</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">26TE</td><td>2º estágio de temperatura no Trafo de excitação</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">46G</td><td>2º estágio sequência negativa</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">64G/64G(100%)/64S(100%)/64S(20%)</td><td>Relé de proteção de terra estator</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">64TG</td><td>Relé de proteção de terra gerador</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">64FG</td><td>Relé de proteção de terra rotor</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">64R</td><td>Relé de proteção de terra rotor</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">40G</td><td>Perda de excitação</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">59T</td><td>Sobretensão temporizado</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">60L</td><td>Tensão desbalanceada</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">24/24G</td><td>Sobre-excitação do gerador (Volt/Hertz)</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">46</td><td>Carga desequilibrada tempo inverso</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">21G</td><td>Mínima impedância</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">50AE/50M</td><td>Energização acidental</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">49</td><td>Sobretemperatura do Rotor (2º estágio)</td><td class="impeditiva sim">SIM</td><td class="liberacao">OPR</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">49</td><td>Sobretemperatura do Estator (2º estágio)</td><td class="impeditiva sim">SIM</td><td class="liberacao">OPR</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">Sobretemperatura Ar Quente</td><td>Sobretemperatura do Ar Quente do Gerador (2º Estágio)</td><td class="impeditiva sim">SIM</td><td class="liberacao">OPR</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">Nível Baixo Óleo Trafo</td><td>Nível Baixo de Óleo no Transformador</td><td class="impeditiva sim">SIM</td><td class="liberacao">OPR</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">Alta temp. pontes</td><td>Alta temperatura 2º estágio das pontes retificadoras</td><td class="impeditiva sim">SIM</td><td class="liberacao">OPR</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">Demais Proteções</td><td>Demais Proteções com desligamento</td><td class="impeditiva nao">NÃO</td><td class="liberacao">OPR</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">Demais alarmes</td><td>Demais alarmes</td><td class="impeditiva nao">NÃO</td><td class="liberacao">-</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Mancal de Escora da Turbina (MET) -->
+                <div class="system-section">
+                    <div class="system-title">Mancal de Escora da Turbina (MET)</div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Nome da Proteção</th>
+                                    <th>Impeditiva</th>
+                                    <th>Liberação</th>
+                                    <th>Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td class="codigo">Nível óleo MET</td><td>Nível de óleo muito baixo na cuba do MET</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">Temp. metal MET</td><td>Temperatura muito alta do metal do MET</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">Fluxo óleo resf.</td><td>Fluxo do óleo de resfriamento baixo</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN/OPR</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">Demais alarmes</td><td>Demais alarmes</td><td class="impeditiva nao">NÃO</td><td class="liberacao">-</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Mancal Guia do Gerador -->
+                <div class="system-section">
+                    <div class="system-title">Mancal Guia do Gerador</div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Nome da Proteção</th>
+                                    <th>Impeditiva</th>
+                                    <th>Liberação</th>
+                                    <th>Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td class="codigo">Fluxo óleo resf.</td><td>Fluxo do óleo de resfriamento baixo</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN/OPR</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">Nível óleo MGG</td><td>Nível de óleo muito baixo na cuba do MGG</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">Temp. óleo MGG</td><td>Temperatura muito alta do óleo do MGG</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">Temp. metal</td><td>Temperatura do metal muito alta</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">Pressão vedação</td><td>Pressão diferencial baixa na junta de vedação do eixo</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">Demais alarmes</td><td>Demais alarmes</td><td class="impeditiva nao">NÃO</td><td class="liberacao">-</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Mancal Guia da Turbina -->
+                <div class="system-section">
+                    <div class="system-title">Mancal Guia da Turbina</div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Nome da Proteção</th>
+                                    <th>Impeditiva</th>
+                                    <th>Liberação</th>
+                                    <th>Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td class="codigo">Nível óleo MGT</td><td>Nível baixo de óleo no MGT</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">Temp. óleo MGT</td><td>Temperatura muito alta do óleo do MGT</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">Temp. metal MGT</td><td>Temperatura do metal do MGT muito alta</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">Fluxo óleo resf.</td><td>Fluxo do óleo de resfriamento baixo</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN/OPR</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">Demais alarmes</td><td>Demais alarmes</td><td class="impeditiva nao">NÃO</td><td class="liberacao">-</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Regulador de Velocidade -->
+                <div class="system-section">
+                    <div class="system-title">Regulador de Velocidade</div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Nome da Proteção</th>
+                                    <th>Impeditiva</th>
+                                    <th>Liberação</th>
+                                    <th>Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td class="codigo">Nível acumulador</td><td>Nível baixo de óleo no acumulador ar/óleo</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">Pressão acumulador</td><td>Pressão baixa de óleo no acumulador ar/óleo</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">Circuito taquimétrico</td><td>Falha no circuito taquimétrico</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">Alimentação 125 Vcc</td><td>Falha de alimentação de 125 Vcc</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN/OPR</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">Sobre velocidade</td><td>Atuação do sobre velocidade</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">Distribuidor</td><td>Fechamento indevido do distribuidor</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">Comporta Tomada</td><td>Comporta Tomada d'água à deriva</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">Defeito RV</td><td>Defeito no regulador de velocidade</td><td class="impeditiva sim">SIM</td><td class="liberacao">MAN</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                                <tr><td class="codigo">Demais alarmes</td><td>Demais alarmes</td><td class="impeditiva nao">NÃO</td><td class="liberacao">-</td><td><button class="btn-procedimento" onclick="showDetails(this)">▼ Ver Procedimento</button></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PARA PROCEDIMENTO -->
+    <div id="procedimentoModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Título da Proteção</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Conteúdo será inserido dinamicamente -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dados dos Procedimentos (Simulados a partir do exemplo no MHT)
+        const procedimentos = {
+            "default": "1. O Centro de Operação deve acionar a equipe de assistência local e ou manutenção especializada para inspeção, isolação e liberação do equipamento.\n2. Após liberação do equipamento pela equipe de assistência local (mantenedores habilitados a operar) e ou manutenção especializada é rearmar os bloqueios, o Centro de Operação deve disponibilizar e normalizar o equipamento conforme a IO da instalação.",
+            "64R": "1. O Centro de Operação deve acionar a equipe de assistência local e ou manutenção especializada para inspeção, isolação e liberação do equipamento.\n2. Após liberação do equipamento pela equipe de assistência local (mantenedores habilitados a operar) e ou manutenção especializada é rearmar os bloqueios, o Centro de Operação deve disponibilizar e normalizar o equipamento conforme a IO da instalação.",
+            "obs_64R": "* Obs.1: No caso de atuação apenas do alarme da proteção 64R, a manutenção deverá ser informada.",
+            "obs_48DX": "*Obs. para a UHE Tucurui:\nDurante o processo de sincronismo, havendo atuação da função 48DX nos disjuntores das unidades geradoras da UHE Tucurui, a operação local deve providenciar a inspeção visual do disjuntor da subestação blindada, a fim de verificar a inexistência de vazamentos ou quaisquer outras condições anormais no equipamento. Não sendo constatada nenhuma anomalia, a operação deverá disponibilizar a unidade geradora para a realização de uma nova tentativa de fechamento do disjuntor com sincronismo da unidade geradora. Não havendo nova atuação da função 48DX (discordância de polo) a unidade geradora deverá permanecer disponível para os ONS.",
+            "obs_87L": "(*) A proteção 87L é impeditiva somente na UHE Tucurui."
+        };
+
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].classList.remove("active");
+            }
+            tablinks = document.getElementsByClassName("tab-button");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].classList.remove("active");
+            }
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+
+        function showDetails(btn) {
+            const row = btn.closest ? btn.closest('tr') : btn.parentElement.parentElement;
+            const codigo = row.cells[0].textContent.trim();
+            const nome = row.cells[1].textContent.trim();
+            const impeditiva = row.cells[2].textContent.trim();
+            const liberacao = row.cells[3].textContent.trim();
+            
+            // Tenta pegar o sistema do título da seção
+            let sectionElement = row;
+            while (sectionElement && !sectionElement.classList.contains('system-section')) {
+                sectionElement = sectionElement.parentElement;
+            }
+            const sistema = sectionElement ? sectionElement.querySelector('.system-title').textContent.trim() : 'Sistema Desconhecido';
+
+            document.getElementById('modalTitle').innerText = `${codigo} - ${nome}`;
+            
+            let bodyHTML = `
+                <div class="info-row">
+                    <label>Código:</label>
+                    <p>${codigo}</p>
+                </div>
+                <div class="info-row">
+                    <label>Nome da Proteção:</label>
+                    <p>${nome}</p>
+                </div>
+                <div class="info-row">
+                    <label>Sistema:</label>
+                    <p>${sistema}</p>
+                </div>
+                <div class="info-row">
+                    <label>Impeditiva:</label>
+                    <p>${impeditiva}</p>
+                </div>
+                <div class="info-row">
+                    <label>Liberação:</label>
+                    <p>${liberacao}</p>
+                </div>
+                <div class="info-row">
+                    <label>Procedimento Operacional:</label>
+                    <p>${procedimentos[codigo] || procedimentos["default"]}</p>
+                </div>
+            `;
+
+            if (codigo === "64R") {
+                bodyHTML += `
+                    <div class="observacoes">
+                        <label>⚠️ Observações:</label>
+                        <p>${procedimentos["obs_64R"]}</p>
+                    </div>
+                `;
+            }
+
+            if (codigo === "48DX") {
+                bodyHTML += `
+                    <div class="observacoes">
+                        <label>⚠️ Observações:</label>
+                        <p>${procedimentos["obs_48DX"]}</p>
+                    </div>
+                `;
+            }
+
+            if (codigo === "87L") {
+                bodyHTML += `
+                    <div class="observacoes">
+                        <label>⚠️ Observações:</label>
+                        <p>${procedimentos["obs_87L"]}</p>
+                    </div>
+                `;
+            }
+
+            document.getElementById('modalBody').innerHTML = bodyHTML;
+            document.getElementById('procedimentoModal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('procedimentoModal').classList.remove('show');
+        }
+
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('procedimentoModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        });
+
+        function handleSearch(event) {
+            if (event.key === "Enter" || event.keyCode === 13) {
+                performSearch();
+            }
+        }
+
+        function performSearch() {
+            const input = document.getElementById('searchInput').value.toLowerCase();
+            const resultsDiv = document.getElementById('searchResults');
+            
+            if (input.trim() === "") {
+                resultsDiv.innerHTML = "";
+                return;
+            }
+
+            let matches = [];
+            const rows = document.querySelectorAll('#sistemas tbody tr');
+            
+            rows.forEach(row => {
+                const codigo = row.cells[0].textContent.toLowerCase().trim();
+                const nome = row.cells[1].textContent.toLowerCase().trim();
+                if (codigo.includes(input) || nome.includes(input)) {
+                    let sectionElement = row;
+                    while (sectionElement && !sectionElement.classList.contains('system-section')) {
+                        sectionElement = sectionElement.parentElement;
+                    }
+                    const sistema = sectionElement ? sectionElement.querySelector('.system-title').textContent.trim() : 'Sistema Desconhecido';
+                    matches.push({
+                        codigo: row.cells[0].textContent.trim(),
+                        nome: row.cells[1].textContent.trim(),
+                        sistema: sistema,
+                        impeditiva: row.cells[2].textContent.trim(),
+                        liberacao: row.cells[3].textContent.trim(),
+                        impeditivaClass: row.cells[2].className
+                    });
+                }
+            });
+
+            if (matches.length > 0) {
+                let html = `
+                    <div class="resultado-busca">
+                        <h3>Resultados da Busca (${matches.length} encontrado${matches.length > 1 ? 's' : ''})</h3>
+                    </div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Nome da Proteção</th>
+                                    <th>Sistema</th>
+                                    <th>Impeditiva</th>
+                                    <th>Liberação</th>
+                                    <th>Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                matches.forEach(m => {
+                    html += `
+                        <tr>
+                            <td class="codigo">${m.codigo}</td>
+                            <td>${m.nome}</td>
+                            <td>${m.sistema}</td>
+                            <td class="${m.impeditivaClass}">${m.impeditiva}</td>
+                            <td class="liberacao">${m.liberacao}</td>
+                            <td><button class="btn-procedimento" onclick="showDetailsFromSearch(this)">▼ Ver Procedimento</button></td>
+                        </tr>
+                    `;
+                });
+
+                html += `</tbody></table></div>`;
+                resultsDiv.innerHTML = html;
+            } else {
+                resultsDiv.innerHTML = '<div class="no-results">Nenhuma proteção encontrada para sua busca.</div>';
+            }
+        }
+
+        function showDetailsFromSearch(btn) {
+            const row = btn.closest ? btn.closest('tr') : btn.parentElement.parentElement;
+            const codigo = row.cells[0].textContent.trim();
+            const nome = row.cells[1].textContent.trim();
+            const sistema = row.cells[2].textContent.trim();
+            const impeditiva = row.cells[3].textContent.trim();
+            const liberacao = row.cells[4].textContent.trim();
+
+            document.getElementById('modalTitle').innerText = `${codigo} - ${nome}`;
+            
+            let bodyHTML = `
+                <div class="info-row">
+                    <label>Código:</label>
+                    <p>${codigo}</p>
+                </div>
+                <div class="info-row">
+                    <label>Nome da Proteção:</label>
+                    <p>${nome}</p>
+                </div>
+                <div class="info-row">
+                    <label>Sistema:</label>
+                    <p>${sistema}</p>
+                </div>
+                <div class="info-row">
+                    <label>Impeditiva:</label>
+                    <p>${impeditiva}</p>
+                </div>
+                <div class="info-row">
+                    <label>Liberação:</label>
+                    <p>${liberacao}</p>
+                </div>
+                <div class="info-row">
+                    <label>Procedimento Operacional:</label>
+                    <p>${procedimentos[codigo] || procedimentos["default"]}</p>
+                </div>
+            `;
+
+            if (codigo === "64R") {
+                bodyHTML += `
+                    <div class="observacoes">
+                        <label>⚠️ Observações:</label>
+                        <p>${procedimentos["obs_64R"]}</p>
+                    </div>
+                `;
+            }
+
+            if (codigo === "48DX") {
+                bodyHTML += `
+                    <div class="observacoes">
+                        <label>⚠️ Observações:</label>
+                        <p>${procedimentos["obs_48DX"]}</p>
+                    </div>
+                `;
+            }
+
+            if (codigo === "87L") {
+                bodyHTML += `
+                    <div class="observacoes">
+                        <label>⚠️ Observações:</label>
+                        <p>${procedimentos["obs_87L"]}</p>
+                    </div>
+                `;
+            }
+
+            document.getElementById('modalBody').innerHTML = bodyHTML;
+            document.getElementById('procedimentoModal').classList.add('show');
+        }
+    </script>
+
+    <!-- Registrar Service Worker para PWA -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => {
+                        console.log('Service Worker registrado com sucesso:', registration);
+                    })
+                    .catch(error => {
+                        console.log('Erro ao registrar Service Worker:', error);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
